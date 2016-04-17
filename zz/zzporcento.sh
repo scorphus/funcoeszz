@@ -42,7 +42,7 @@ zzporcento ()
 	### Vamos analisar o primeiro valor
 
 	# Número fracionário (1.2345 ou 1,2345)
-	if zztestar numero_fracionario "$valor1"
+	if zztestar numero_fracionario "$valor1" && ! zztestar inteiro "$valor1"
 	then
 		separador=$(echo "$valor1" | tr -d 0-9)
 		escala=$(echo "$valor1" | sed 's/.*[.,]//')
@@ -75,11 +75,17 @@ zzporcento ()
 		fi
 
 		# Porcentagem fracionada
-		if zztestar numero_fracionario "$porcentagem"
+		if zztestar numero_fracionario "$porcentagem" && ! zztestar inteiro "$porcentagem"
 		then
+			if echo "$porcentagem" | grep -E '^(0\.|\.)' >/dev/null
+			then
+				zztool erro "O valor da porcentagem deve ser um número. Exemplos: 2 ou 2,5."
+				return 1
+			fi
+
 			# Se o valor é inteiro (escala=0) e a porcentagem fracionária,
 			# é preciso forçar uma escala para que o resultado apareça correto.
-			test $escala -eq 0 && escala=2 valor1="$valor1.00"
+			test $escala -eq 0 && { escala=2; valor1="$valor1.00"; }
 
 		# Porcentagem inteira ou erro
 		elif ! zztool testa_numero "$porcentagem"
@@ -98,7 +104,7 @@ zzporcento ()
 		# Sempre usar o ponto como separador interno (para os cálculos)
 
 		# Número fracionário
-		if zztestar numero_fracionario "$valor2"
+		if zztestar numero_fracionario "$valor2" && ! zztestar inteiro "$valor2"
 		then
 			separador=$(echo "$valor2" | tr -d 0-9)
 			valor2=$(echo "$valor2" | sed 'y/,/./')
@@ -153,5 +159,5 @@ zzporcento ()
 	fi |
 
 	# Assegura 0.123 (em vez de .123) e restaura o separador original
-	sed "s/^\./0./; y/./$separador/"
+	sed "/\./ { s/^\./0./; y/./$separador/; }"
 }
